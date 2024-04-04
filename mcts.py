@@ -48,8 +48,8 @@ def mcts_policy(cpu_time):
                 max_ucb = float('-inf')
                 next_state = None
                 
-                total_visits = sum(state_visits[s] for s in state_children[curr_state])
-                for st, child in state_children[curr_state]:
+                total_visits = sum(state_visits.get(s, 0) for s in state_children[curr_state])
+                for child in state_children[curr_state]:
                     if child not in state_visits:
                         next_state = child
                         break
