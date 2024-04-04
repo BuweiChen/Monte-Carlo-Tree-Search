@@ -123,13 +123,22 @@ def mcts_policy(cpu_time):
             """
             all_moves = s.get_actions()
             best_move = None
-            best_move_reward = float('-inf') 
-            for move in all_moves:
-                successor_state = s.successor(move)
-                move_reward = state_rewards[successor_state]
-                if move_reward > best_move_reward:
-                    best_move = move
-                    best_move_reward = move_reward
+            if s.actor() == 0:
+                best_move_reward = float('-inf') 
+                for move in all_moves:
+                    successor_state = s.successor(move)
+                    move_reward = state_rewards[successor_state]/state_visits[successor_state]
+                    if move_reward > best_move_reward:
+                        best_move = move
+                        best_move_reward = move_reward
+            else:
+                best_move_reward = float('inf') 
+                for move in all_moves:
+                    successor_state = s.successor(move)
+                    move_reward = state_rewards[successor_state]/state_visits[successor_state]
+                    if move_reward < best_move_reward:
+                        best_move = move
+                        best_move_reward = move_reward
             return best_move
         
         while time.time() - start_time < cpu_time:
