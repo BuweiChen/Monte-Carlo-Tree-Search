@@ -42,11 +42,30 @@ def mcts_policy(cpu_time):
             
             while True:
                 path.append(curr_state)
+                if curr_state.is_terminal() or curr_state not in state_children:
+                    break
+                max_ucb = float('-inf')
+                next_state = None
                 
+                total_visits = sum(state_visits[s] for s in state_children[curr_state])
+                for st, child in state_children[curr_state]:
+                    if child not in state_visits:
+                        next_state = child
+                        break
+                    mean_reward = state_rewards[child] / state_visits[child]
+                    ucb_score = mean_reward + math.sqrt(2 * math.log(total_visits) / state_visits[child])
+                    if ucb_score > max_ucb:
+                        max_ucb = ucb_score
+                        next_state = child
+
+                if next_state is None:
+                    raise Exception
                 
+                curr_state = next_state
                 
-            
-            return
+            return path
+        
+        
         
         def get_best_move(s):
             """get the best move of the given state
