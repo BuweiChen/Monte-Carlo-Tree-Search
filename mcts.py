@@ -44,6 +44,7 @@ def mcts_policy(cpu_time):
                 path.append(curr_state)
                 if curr_state.is_terminal() or curr_state not in state_children:
                     break
+                
                 max_ucb = float('-inf')
                 next_state = None
                 
@@ -53,7 +54,10 @@ def mcts_policy(cpu_time):
                         next_state = child
                         break
                     mean_reward = state_rewards[child] / state_visits[child]
-                    ucb_score = mean_reward + math.sqrt(2 * math.log(total_visits) / state_visits[child])
+                    if curr_state.actor() == 0:
+                        ucb_score = mean_reward + math.sqrt(2 * math.log(total_visits) / state_visits[child])
+                    else:
+                        ucb_score = -mean_reward + math.sqrt(2 * math.log(total_visits) / state_visits[child])
                     if ucb_score > max_ucb:
                         max_ucb = ucb_score
                         next_state = child
@@ -65,7 +69,48 @@ def mcts_policy(cpu_time):
                 
             return path
         
+        def play_to_terminal(s):
+            """simulate the state with random moves until terminal state
+
+            Args:
+                s (State): a position
+
+            Returns:
+                float: payoff at the terminal state
+            """
+            curr_state = s
+            while not curr_state.is_terminal():
+                possible_actions = curr_state.get_actions()
+                rand_action = random.choice(possible_actions)
+                curr_state = curr_state.successor(rand_action)
+
+            return curr_state.payoff()
         
+        def backpropagate(path, payoff):
+            """ pop from the path and update state_visits and state_rewards
+                accordingly
+
+            Args:
+                path (deque): a path starting from the root state up to the leaf node
+                payoff (float): newest simulated payoff at the terminal state of the leaf node
+            """
+            while path:
+                state = path.pop()
+                state_visits[state] = state_visits.get(state, 0) + 1
+                state_rewards[state] = state_rewards.get(state, 0) + payoff
+                
+        def expand_if_expandable(s):
+            """update state_children with children states of s if s has any children states
+
+            Args:
+                s (state): a position
+            """
+            if s not in state_children:
+                child_states = []
+                for action in s.get_actions():
+                    child = s.successor(action)
+                    child_states.append(child)
+                state_children[s] = child_states
         
         def get_best_move(s):
             """get the best move of the given state
@@ -90,7 +135,9 @@ def mcts_policy(cpu_time):
         while time.time() - start_time < cpu_time:
             path = choose_path_to_leaf(state)
             leaf = path.pop()
-            payoff = play_to_terminal()
+            expand_if_expandable(leaf)
+            path.append(leaf)
+            payoff = play_to_terminal(leaf)
             backpropagate(path, payoff)
         
         
